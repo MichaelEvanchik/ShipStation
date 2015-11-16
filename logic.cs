@@ -56,7 +56,7 @@ protected void SomeEventYourIn()
 
                                             oRes2 = serializer2.Deserialize<oShippmentCreateLabelResponse>(responseText);
                                             var binary = System.Convert.FromBase64String(oRes2.labelData);
-                                            string spath = "c:\\inetpub\\wwwroot\\ftproot\\redbubble\\work_orders\\" + lsale_date.Year.ToString() + "\\" + lsale_date.Month.ToString() + "\\" + lsale_date.Day.ToString() + "\\";
+                                            string spath = "c:\\inetpub\\wwwroot\\ftproot\\shipstation\\work_orders\\" + lsale_date.Year.ToString() + "\\" + lsale_date.Month.ToString() + "\\" + lsale_date.Day.ToString() + "\\";
                                             System.IO.Directory.CreateDirectory(spath + external_ref.ToString());
 
                                             File.WriteAllBytes(spath + external_ref.ToString() + "\\Label" + external_ref.ToString() + ".pdf", binary);
