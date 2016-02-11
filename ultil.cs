@@ -208,21 +208,23 @@ namespace shipstation_erp.Models
             return o;
         }
 
-        public HttpWebResponse PostJsonPrintLabelShipStation(oShipStationCreateLabelRequest s)
+ public MyWebResponse PostJsonShipStation(object s, string address)
         {
-            ServicePointManager.DefaultConnectionLimit = 6;
+            ServicePointManager.DefaultConnectionLimit = 1;
             var oSerializer = new System.Web.Script.Serialization.JavaScriptSerializer();
             string sJSON = oSerializer.Serialize(s);
             string wRespStatusCode = string.Empty;
-            var baseAddress = "https://ssapi.shipstation.com/orders/createlabelfororder";
+            string responseText = string.Empty;
+            var r = new MyWebResponse();
+            bool bwaserror = false;
 
-            var http = (HttpWebRequest)WebRequest.Create(new Uri(baseAddress));
+            var http = (HttpWebRequest)WebRequest.Create(new Uri(address));
             http.Accept = "application/json";
             http.ContentType = "application/json";
             http.Method = "POST";
-            http.Headers.Add("Authorization", "Basic YourSecretCode");
+            http.Headers.Add("Authorization", "Basic Y2E2YjFlOTExM2ZlNGY3YTllMjFlYmEwNmVmZTE0N2M6NjM1MDkwNzQ2MzM5NDlkOGI4ZDQwNGQ3ZTc2YTYwMDE=");
             http.KeepAlive = false;
-            ASCIIEncoding encoding = new ASCIIEncoding();
+            var encoding = new ASCIIEncoding();
             Byte[] bytes = encoding.GetBytes(sJSON);
 
             Stream newStream = http.GetRequestStream();
@@ -238,75 +240,70 @@ namespace shipstation_erp.Models
             catch (WebException we)
             {
                 wRespStatusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
+                bwaserror = true;
+                r.bexception = true;
+                using (var reader = new System.IO.StreamReader(we.Response.GetResponseStream(), encoding))
+                {
+                    responseText = reader.ReadToEnd();
+                    if (responseText.IndexOf("ExceptionMessage") > 0)
+                    {
+                        responseText = responseText.Substring(responseText.IndexOf("ExceptionMessage"));
+                        responseText = responseText.Substring(0, responseText.IndexOf("ExceptionType") - 1);
+                        responseText = responseText.Replace("\\", "");
+                        responseText = responseText.Replace("\"", "");
+                        r.smessage = responseText;
+                    }
+                    else
+                    {
+                        responseText = responseText.Replace("\\", "");
+                        responseText = responseText.Replace("\"", "");
+                        r.smessage = responseText;
+                    }
+                }
+                r.smessage += " " + wRespStatusCode;
+                // r.smessage = we.InnerException.ToString();
+                r.statuscode = wRespStatusCode;
             }
 
-            if (wRespStatusCode == "")
+            if (bwaserror == false)
             {
-                wRespStatusCode = response.StatusCode.ToString();
-            }
+                if (wRespStatusCode == "")
+                {
+                    wRespStatusCode = response.StatusCode.ToString();
+                    r.bexception = false;
+                    r.statuscode = wRespStatusCode;
+                }
 
+
+                using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
+                {
+                    responseText = reader.ReadToEnd();
+                    r.smessage = responseText;
+                }
+            }
             try
             {
                 response.Close();
+            }
+            catch { }
+            try
+            {
                 newStream.Dispose();
+            }
+            catch { }
+            try
+            {
                 response.Dispose();
+            }
+            catch { }
+            try
+            {
                 bytes = null;
             }
             catch { }
 
-            return response;
+            return r;
         }
-
-        public HttpWebResponse PostJsonCreateOrderShipStation(oShipStationCreateOrderRequest s)
-        {
-            ServicePointManager.DefaultConnectionLimit = 6;
-            var oSerializer = new System.Web.Script.Serialization.JavaScriptSerializer();
-            string sJSON = oSerializer.Serialize(s);
-            string wRespStatusCode = string.Empty;
-            var baseAddress = "https://ssapi.shipstation.com/orders/createorder";
-
-
-            var http = (HttpWebRequest)WebRequest.Create(new Uri(baseAddress));
-            http.Accept = "application/json";
-            http.ContentType = "application/json";
-            http.Method = "POST";
-            http.Headers.Add("Authorization", "Basic YourSecretCode");
-            http.KeepAlive = false;
-            ASCIIEncoding encoding = new ASCIIEncoding();
-            Byte[] bytes = encoding.GetBytes(sJSON);
-
-            Stream newStream = http.GetRequestStream();
-            newStream.Write(bytes, 0, bytes.Length);
-            newStream.Close();
-
-            HttpWebResponse response = null;
-
-            try
-            {
-                response = (HttpWebResponse)http.GetResponse();
-            }
-            catch (WebException we)
-            {
-                wRespStatusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
-            }
-
-            if (wRespStatusCode == "")
-            {
-                wRespStatusCode = response.StatusCode.ToString();
-            }
-
-            try
-            {
-                response.Close();
-                newStream.Dispose();
-                response.Dispose();
-                bytes = null;
-            }
-            catch { }
-
-            return response;
-        }
-
         public string PostJsonOrderRedBubble(order o)
         {
             ServicePointManager.DefaultConnectionLimit = 6;
